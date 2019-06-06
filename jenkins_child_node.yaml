@@ -98,7 +98,7 @@ Resources:
       MaxSize: 2
       MinSize: 1
       LaunchConfigurationName: !Ref JenkinsLaunchConfiguration
-      Type: string
+      -
       Tags:
         Key: Name
         Value: Jenkins Child Node
