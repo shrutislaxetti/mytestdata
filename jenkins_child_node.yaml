@@ -88,23 +88,23 @@ Resources:
       SecurityGroups:
         - !Ref JenkinsAppSG
 
-  #JenkinsASG:
-   # Type: AWS::AutoScaling::AutoScalingGroup
-    #Properties:
-     # AutoScalingGroupName: Jenkins Child Node AutoScaling Group
-     # DesiredCapacity: 1
-      #HealthCheckGracePeriod: 300
-     # HealthCheckType: EC2
-     # MaxSize: 2
-     # MinSize: 1
-     # LaunchConfigurationName: !Ref JenkinsLaunchConfiguration
-     # Tags:
-      #  - 
-      #    Key: Name
-      #    Value: Jenkins Child Node
-      #TargetGroupARNs:
-      #  - !Ref JenkinsTargetGroup
-      #VPCZoneIdentifier: !Ref NLBSubnets
+  JenkinsASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: Jenkins Child Node AutoScaling Group
+      DesiredCapacity: 1
+      HealthCheckGracePeriod: 300
+      HealthCheckType: EC2
+      MaxSize: 2
+      MinSize: 1
+      LaunchConfigurationName: !Ref JenkinsLaunchConfiguration
+      Tags:
+        - 
+         Key: Name
+          Value: Jenkins Child Node
+      TargetGroupARNs:
+        - !Ref JenkinsTargetGroup
+      VPCZoneIdentifier: !Ref NLBSubnets
 
   JenkinsLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
