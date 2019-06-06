@@ -101,7 +101,7 @@ Resources:
       Tags:
        - Key: Name
          Value: Jenkins Child Node
-         PropagateAtLaunch: "true"
+         PropagateAtLaunch: "false"
       TargetGroupARNs: !Ref JenkinsTargetGroup
       VPCZoneIdentifier: !Ref NLBSubnets
 
