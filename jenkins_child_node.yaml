@@ -1,0 +1,157 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Creates a Jenkins child node inside a VPC along with the Network Load Balancer and VPC Endpoint Interface.  It outputs the DNS for the Endpoint Interface for use by the Jenkins master.  Subnets for use with the Network Load Balancer must be provided as input.
+
+Parameters:
+  NLBSubnets:
+    Description: Comma separated list of subnets for the Network Load Balancer
+    Type: List<AWS::EC2::Subnet::Id>
+
+  JenkinsVPC:
+    Description: VPC for use with Jenkins deployment
+    Type: AWS::EC2::VPC::Id
+
+  InstanceSize:
+    Description: Size of Jenkins instance to launch
+    Type: String
+    Default: t3.micro
+    AllowedValues: [t2.micro, t3.micro, t2.medium, t2.large]
+
+  CIDRRange:
+    Description: CIDR Range for the VPC.  This determines what IP addresses will be added to the Jenkins Security Group.
+    Type: String
+    
+Mappings:
+  RegionMap:
+    us-east-1:
+      JenkinsChild: ami-070883ad467f1d2b2
+    us-east-2:
+      JenkinsChild: ami-04ccb739c2bc065de
+    us-west-1:
+      JenkinsChild: ami-0e878c0b09ab217dc
+    us-west-2:
+      JenkinsChild: ami-0de26dc4740ab1f02
+    ap-south-1:
+      JenkinsChild: ami-078fee1d1badd0cb8
+    ap-northeast-1:
+      JenkinsChild: ami-037a9c68245d23021
+    ap-northeast-2:
+      JenkinsChild: ami-08c19359b59d42455
+    ap-southeast-1:
+      JenkinsChild: ami-0a5f379a3e4b66139
+    ap-southeast-2:
+      JenkinsChild: ami-06973ba0c85d14440
+    ca-central-1:
+      JenkinsChild: ami-05b049cf1e4df079b
+    eu-central-1:
+      JenkinsChild: ami-0146e70db8916c2d4
+    eu-west-1:
+      JenkinsChild: ami-0ad71d2c1a7928cf7
+    eu-west-2:
+      JenkinsChild: ami-0de7b5b1410aadf9c
+    eu-west-3:
+      JenkinsChild: ami-0298b448f965be12e
+    eu-north-1:
+      JenkinsChild: ami-033b45ecd70bdbe4c
+    sa-east-1:
+      JenkinsChild: ami-0797e5c6c0c7e11ff
+
+Resources:
+  JenkinsAppSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: Jenkins Application Load Balancer Group
+      GroupDescription: Access rules for the Jenkins child nodel.
+      SecurityGroupIngress:
+        -
+          CidrIp: !Ref CIDRRange
+          Description: All SSH traffic from the VPC is allowed.
+          FromPort:  22
+          IpProtocol: TCP
+          ToPort: 22
+      SecurityGroupEgress:
+        -
+          CidrIp: !Ref CIDRRange
+          Description: All SSH traffic in the VPC is allowed.
+          FromPort: 22
+          IpProtocol: TCP
+          ToPort: 22
+      VpcId: !Ref JenkinsVPC
+
+  JenkinsLaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !FindInMap [RegionMap, !Ref "AWS::Region", JenkinsChild]
+      InstanceMonitoring: false
+      InstanceType: !Ref InstanceSize
+      LaunchConfigurationName: Jenkins Child Node Launch Configuration
+      SecurityGroups:
+        - !Ref JenkinsAppSG
+
+  #JenkinsASG:
+   # Type: AWS::AutoScaling::AutoScalingGroup
+    #Properties:
+     # AutoScalingGroupName: Jenkins Child Node AutoScaling Group
+     # DesiredCapacity: 1
+      #HealthCheckGracePeriod: 300
+     # HealthCheckType: EC2
+     # MaxSize: 2
+     # MinSize: 1
+     # LaunchConfigurationName: !Ref JenkinsLaunchConfiguration
+     # Tags:
+      #  - 
+      #    Key: Name
+      #    Value: Jenkins Child Node
+      #TargetGroupARNs:
+      #  - !Ref JenkinsTargetGroup
+      #VPCZoneIdentifier: !Ref NLBSubnets
+
+  JenkinsLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      IpAddressType: ipv4
+      Name: Jenkins-Child-Node-LB
+      Subnets: !Ref NLBSubnets 
+      Type: network
+
+  JenkinsTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: Jenkins-Child-Nodes
+      VpcId: !Ref JenkinsVPC
+      TargetType: instance
+      Port: 22
+      Protocol: TCP
+
+  JenkinsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - 
+          Type: forward
+          TargetGroupArn: !Ref JenkinsTargetGroup
+      LoadBalancerArn: !Ref JenkinsLoadBalancer
+      Port: 22
+      Protocol: TCP
+
+  JenkinsEndpointService:
+    Type: AWS::EC2::VPCEndpointService
+    Properties:
+      NetworkLoadBalancerArns: 
+        - !Ref JenkinsLoadBalancer
+      AcceptanceRequired: true
+
+  JenkinsEndpointServicePermissions:
+    Type: AWS::EC2::VPCEndpointServicePermissions
+    Properties:
+      AllowedPrincipals:
+        - arn:aws:iam::189955838545:root
+        - arn:aws:iam::970046479865:root
+      ServiceId: !Ref JenkinsEndpointService
+
+Outputs:
+  Endpoint:
+    Description: The id of the Endpoint Service
+    Value: !Ref JenkinsEndpointService
+    Export:
+      Name: !Sub "${AWS::StackName}-EndpointService"
