@@ -101,10 +101,9 @@ Resources:
       Tags:
        - Key: Name
          Value: Jenkins Child Node
-         PropagateAtLaunch: "false"
-      DefaultActions:
-      - TargetGroupARNs: !Ref JenkinsTargetGroup
-      - VPCZoneIdentifier: !Ref NLBSubnets
+         PropagateAtLaunch: "true"
+     # TargetGroupARNs: !Ref JenkinsTargetGroup
+     # VPCZoneIdentifier: !Ref NLBSubnets
 
   JenkinsLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
