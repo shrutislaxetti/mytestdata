@@ -61,7 +61,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: Jenkins Application Load Balancer Group
-      GroupDescription: Access rules for the Jenkins child nodel.
+      GroupDescription: Access rules for the Jenkins child node.
       SecurityGroupIngress:
         -
           CidrIp: !Ref CIDRRange
@@ -102,8 +102,9 @@ Resources:
        - Key: Name
          Value: Jenkins Child Node
          PropagateAtLaunch: "false"
-      TargetGroupARNs: !Ref JenkinsTargetGroup
-      VPCZoneIdentifier: !Ref NLBSubnets
+      DefaultActions:
+      - TargetGroupARNs: !Ref JenkinsTargetGroup
+      - VPCZoneIdentifier: !Ref NLBSubnets
 
   JenkinsLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
