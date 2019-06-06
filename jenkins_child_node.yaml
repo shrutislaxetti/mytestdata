@@ -98,9 +98,9 @@ Resources:
       MaxSize: 2
       MinSize: 1
       LaunchConfigurationName: !Ref JenkinsLaunchConfiguration
-      Tags:
-        Key: Name
-        Value: Jenkins Child Node
+      #Tags:
+      #  Key: Name
+      #  Value: Jenkins Child Node
       TargetGroupARNs: !Ref JenkinsTargetGroup
       VPCZoneIdentifier: !Ref NLBSubnets
 
